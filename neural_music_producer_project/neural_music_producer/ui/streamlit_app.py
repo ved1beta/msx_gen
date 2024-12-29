@@ -1,17 +1,17 @@
 
-import streamlit as st
-from neural_music_producer.video_analysis.emotion_analyzer import VideoEmotionAnalyzer
-from neural_music_producer.music_generation.generator import MusicGenerator
+# Start with basic image classification
+from transformers import ViTImageProcessor, ViTForImageClassification
 
-def main():
-    st.title("Neural Music Producer")
+def simple_emotion_detector(image):
+    # 1. Load a pre-trained model
+    processor = ViTImageProcessor.from_pretrained("google/vit-base-patch16-224")
+    model = ViTForImageClassification.from_pretrained("google/vit-base-patch16-224")
     
-    # File uploader
-    video_file = st.file_uploader("Upload your video", type=['mp4', 'mov'])
+    # 2. Process the image
+    inputs = processor(image, return_tensors="pt")
     
-    if video_file:
-        # Process video and generate music
-        pass
-
-if __name__ == "__main__":
-    main()
+    # 3. Get predictions
+    outputs = model(**inputs)
+    
+    return outputs
+simple_emotion_detector("new.png")

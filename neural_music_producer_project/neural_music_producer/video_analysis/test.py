@@ -62,7 +62,7 @@ def test_emotion_analyzer(video_path: str):
         plt.tight_layout()
         
         # Save plot
-        output_path = Path("emotion_timeline.png")
+        output_path = Path("timeline/emotion_timeline.png")
         plt.savefig(output_path, bbox_inches='tight', dpi=300)
         print(f"\nPlot saved to {output_path}")
         
@@ -78,7 +78,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         video_path = sys.argv[1]
     else:
-        video_path = "stock_vids/new.mp4"
+        video_path = "stock_vids/new3.mp4"
     
     print(f"Processing video: {video_path}")
     predictions, timeline = test_emotion_analyzer(video_path)
