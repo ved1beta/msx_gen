@@ -55,7 +55,52 @@ class FrameExtractor:
         frame = cv2.resize(frame, self.traget_size)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = frame.astype(np.float32)/255.0
-        return frame 
 
-# extractor= FrameExtractor()
+        return frame 
+    
+    def extract_frames(self, 
+                       video_path:str,
+                       save_path:Optional[str]= None)-> np.ndarray:
+        video_path= str(Path(video_path).resolve())
+        metadata = self.get_video_matadata(video_path)
+
+        sample_interval = int(metadata.fps / self.target_fps)
+
+        cap = cv2.VideoCapture(video_path)
+        frames = []
+        frame_count = 0
+        batch = []
+
+        self.logger.info(f"Extracting frames from {video_path}")
+        self.logger.info(f"Video FPS: {metadata.fps}, Target FPS: {self.target_fps}")
+        
+        while True:
+            ret , frame= cap.read()
+            if not ret:
+                break
+
+            if frame_count % sample_interval == 0 :
+                batch.append(frame)
+
+                if len(batch)==self.batch_size:
+                    processed_batcj= self.process_batch(batch)
+                    batch= []
+
+            frame_count = +1
+        if batch:
+            processed_batch = self._process_batch(batch)
+            frames.extend(processed_batch)
+        cap.release()
+
+        frames_array = np.array(frames)
+        
+        if save_path:
+            self._save_frames(frames_array, save_path)
+            
+        self.logger.info(f"Extracted {len(frames)} frames")
+        return frames_array
+
+
+
+        
 # extractor.get_video_matadata("stock_vids/new.mp4")
