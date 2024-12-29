@@ -51,8 +51,8 @@ class FrameExtractor:
         cap.release()
         print(metadata)
         return metadata
-    def preprocess_frames(self, frame:np.ndarray ) -> np.ndarray :
-        frame = cv2.resize(frame, self.traget_size)
+    def preprocessframes(self, frame:np.ndarray ) -> np.ndarray :
+        frame = cv2.resize(frame, self.target_size)
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = frame.astype(np.float32)/255.0
 
@@ -86,7 +86,7 @@ class FrameExtractor:
                     processed_batcj= self.process_batch(batch)
                     batch= []
 
-            frame_count = +1
+            frame_count += 1
         if batch:
             processed_batch = self._process_batch(batch)
             frames.extend(processed_batch)
@@ -101,6 +101,34 @@ class FrameExtractor:
         return frames_array
 
 
-
+    def _process_batch(self, batch: List[np.ndarray]) -> List[np.ndarray]:
+        """Process a batch of frames in parallel."""
+        with ThreadPoolExecutor() as executor:
+            processed_frames = list(executor.map(self.preprocessframes, batch))
+        return processed_frames
+    
+    def _save_frames(self, frames: np.ndarray, save_path: str):
+        save_path = Path(save_path)
+        save_path.mkdir(parents=True, exist_ok=True)
         
+        for i, frame in enumerate(frames):
+            frame = (frame * 255).astype(np.uint8)
+            cv2.imwrite(str(save_path / f"frame_{i:04d}.jpg"), frame)
+
+if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
+    
+    extractor = FrameExtractor(
+        target_fps=5,
+        target_size=(224, 224),
+        batch_size=32
+    )
+    
+    video_path = "stock_vids/new.mp4"
+    frames = extractor.extract_frames(
+        video_path=video_path,
+        save_path="extracted_frames"
+    )
+    
+    print(f"Extracted frames shape: {frames.shape}")        
 # extractor.get_video_matadata("stock_vids/new.mp4")
