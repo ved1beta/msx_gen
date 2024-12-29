@@ -34,5 +34,5 @@ def main(video_path: str):
     music_generator.play_midi(output_file)
 
 if __name__ == "__main__":
-    video_path = "video_analysis/stock_vids/new.mp4"  # Update this path as needed
+    video_path = "video_analysis/stock_vids/new.mp4"  
     main(video_path)
