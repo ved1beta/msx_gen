@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video to Music Converter</title>
+    <style>
+        :root {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --accent-color: #6366f1;
+            --secondary-bg: #2d2d2d;
+            --hover-color: #4f46e5;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--secondary-bg);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        main {
+            max-width: 600px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            flex-grow: 1;
+        }
+
+        .upload-container {
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--accent-color);
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--hover-color);
+            background-color: rgba(99, 102, 241, 0.1);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--hover-color);
+        }
+
+        button:disabled {
+            background-color: #4b5563;
+            cursor: not-allowed;
+        }
+
+        .audio-player {
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+            display: none;
+        }
+
+        audio {
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        #status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 6px;
+        }
+
+        .error {
+            background-color: #dc2626;
+            color: white;
+        }
+
+        .success {
+            background-color: #059669;
+            color: white;
+        }
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid var(--accent-color);
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Video to Music Converter</h1>
+    </header>
+    
+    <main>
+        <div class="upload-container">
+            <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+                <p>Click or drag video file here to upload</p>
+                <p style="font-size: 0.875rem; color: #9ca3af;">Supported formats: MP4, AVI, MOV</p>
+            </div>
+            <input type="file" id="file-input" accept=".mp4,.avi,.mov" onChange="handleFileSelect(event)">
+            <button id="convert-btn" disabled onclick="convertVideo()">Convert to Music</button>
+        </div>
+
+        <div id="status"></div>
+        <div id="loader" class="loader"></div>
+
+        <div id="audio-container" class="audio-player" style="display: none;">
+            <audio id="audio-player" controls>
+                <source src="" type="audio/wav">
+                Your browser does not support the audio element.
+            </audio>
+            <button onclick="downloadAudio()">Download Music</button>
+        </div>
+    </main>
+
+    <script>
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            const convertBtn = document.getElementById('convert-btn');
+            convertBtn.disabled = !file;
+            
+            // Reset audio player when new file is selected
+            document.getElementById('audio-container').style.display = 'none';
+            document.getElementById('status').textContent = '';
+            document.getElementById('status').className = '';
+        }
+
+        async function convertVideo() {
+            const fileInput = document.getElementById('file-input');
+            const status = document.getElementById('status');
+            const audioContainer = document.getElementById('audio-container');
+            const convertBtn = document.getElementById('convert-btn');
+            const loader = document.getElementById('loader');
+
+            const formData = new FormData();
+            formData.append('video', fileInput.files[0]);
+
+            convertBtn.disabled = true;
+            status.innerHTML = 'Converting video to music...';
+            status.className = '';
+            loader.style.display = 'block';
+            audioContainer.style.display = 'none';
+
+            try {
+                const response = await fetch('/convert', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    status.textContent = 'Conversion successful!';
+                    status.className = 'success';
+                    
+                    // Update audio player source and show container
+                    const audioPlayer = document.getElementById('audio-player');
+                    // Add timestamp to prevent caching
+                    audioPlayer.src = '/download?t=' + new Date().getTime();
+                    audioContainer.style.display = 'block';
+                    
+                    // Attempt to load and play the audio
+                    audioPlayer.load();
+                } else {
+                    throw new Error(data.error || 'Conversion failed');
+                }
+            } catch (error) {
+                status.textContent = `Error: ${error.message}`;
+                status.className = 'error';
+            } finally {
+                convertBtn.disabled = false;
+                loader.style.display = 'none';
+                fileInput.value = '';
+            }
+        }
+
+        function downloadAudio() {
+            window.location.href = '/download';
+        }
+    </script>
+</body>
